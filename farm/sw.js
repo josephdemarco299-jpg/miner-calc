@@ -1,6 +1,6 @@
 // Farm Calc service worker: opens instantly and works offline.
 // Bump VERSION whenever you change any file in farm/ so phones pick up the update.
-const VERSION = "farm-calc-v1";
+const VERSION = "farm-calc-v2";
 const PREFIX = "farm-calc-v";
 const FONTS = "farm-calc-fonts";
 const SHELL = [

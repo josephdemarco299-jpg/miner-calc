@@ -42,6 +42,7 @@
   --bar-pos: #53C690;
   --bar-warn: #E8C062;
   --bar-neg: #F0806F;
+  --series2: #2F6C8F;
   --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -54,7 +55,7 @@
     --ground: #0F1411; --surface: #161D18; --ink: #E4EBE5; --muted: #93A097; --line: #28322B;
     --accent: #E2B450; --accent-soft: #2E2715; --pos: #53C690; --pos-soft: #15291F;
     --neg: #F0806F; --neg-soft: #331B18; --warn: #E8C062; --warn-soft: #2E2812;
-    --bar: #0A0E0B; --bar-line: #222B25;
+    --bar: #0A0E0B; --bar-line: #222B25; --series2: #7DB4D6;
     color-scheme: dark;
   }
 }
@@ -62,7 +63,7 @@
   --ground: #0F1411; --surface: #161D18; --ink: #E4EBE5; --muted: #93A097; --line: #28322B;
   --accent: #E2B450; --accent-soft: #2E2715; --pos: #53C690; --pos-soft: #15291F;
   --neg: #F0806F; --neg-soft: #331B18; --warn: #E8C062; --warn-soft: #2E2812;
-  --bar: #0A0E0B; --bar-line: #222B25;
+  --bar: #0A0E0B; --bar-line: #222B25; --series2: #7DB4D6;
   color-scheme: dark;
 }
 
@@ -260,6 +261,18 @@ tr.total td { border-bottom: 0; font-weight: 600; padding-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 18px; height: 0; border-top: 2.5px solid var(--accent); display: inline-block; }
 .sw.dash { border-top: 2px dashed var(--muted); }
+.sw.alt { border-top-color: var(--series2); }
+.ctl select {
+  flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; padding: 10px; outline: none;
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+}
+.ctl .chev { display: inline-flex; padding-right: 10px; color: var(--muted); pointer-events: none; }
+.ctl .chev svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.re-out { display: grid; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.re-out .stats { margin-top: 4px; }
+.result-line { margin: 0; font-size: 14.5px; }
+.result-line:empty { display: none; }
 .chart { width: 100%; min-width: 0; }
 .chart svg { display: block; width: 100%; height: auto; }
 .chart text { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
@@ -443,6 +456,84 @@ tr.total td { border-bottom: 0; font-weight: 600; padding-top: 10px; }
   <!-- OUTLOOK -->
   <section class="tab" id="tab-outlook" role="tabpanel" aria-labelledby="t-outlook" hidden>
     <div class="panel">
+      <fieldset>
+        <legend>Looking ahead</legend>
+        <div class="two">
+          <label class="field" for="years"><span class="lbl">Years to project</span>
+            <span class="ctl"><input id="years" data-k="years" type="number" inputmode="decimal" step="any" min="0.25" max="10"><span class="unit">yrs</span></span>
+          </label>
+          <label class="field" for="resale"><span class="lbl">Resale at end</span>
+            <span class="ctl"><input id="resale" data-k="resale" type="number" inputmode="decimal" step="any" min="0"><span class="unit">% paid</span></span>
+          </label>
+          <div class="field">
+            <label class="lbl" for="diff">Difficulty growth</label>
+            <span class="ctl"><input id="diff" data-k="diff" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="diff" aria-label="Flip difficulty growth between rising and falling">±</button></span>
+          </div>
+          <div class="field">
+            <label class="lbl" for="btcChg">BTC price change</label>
+            <span class="ctl"><input id="btcChg" data-k="btcChg" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="btcChg" aria-label="Flip BTC price change between up and down">±</button></span>
+          </div>
+        </div>
+        <span class="hint">As more miners join the network, each TH earns fewer sats. Difficulty has risen in most years. Tap ± for a negative number.</span>
+      </fieldset>
+    </div>
+
+    <div class="panel">
+      <fieldset>
+        <legend>Reinvest rewards into TH</legend>
+        <label class="field" for="reTarget"><span class="lbl">Reinvest into</span>
+          <span class="ctl"><select id="reTarget"></select><span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></span>
+          <span class="hint">GoMining adds reinvested TH to one miner at a time. It needs 10 to 5,000 TH, better than 20 W/TH, and at least $0.10 a day in rewards.</span>
+        </label>
+        <div class="two">
+          <label class="field" for="thPrice"><span class="lbl">Price per TH</span>
+            <span class="ctl"><span class="pre">$</span><input id="thPrice" data-k="thPrice" type="number" inputmode="decimal" step="any" min="0"></span>
+          </label>
+          <label class="field" for="reBonus"><span class="lbl">Reinvest bonus</span>
+            <span class="ctl"><span class="pre">+</span><input id="reBonus" data-k="reBonus" type="number" inputmode="decimal" step="any" min="0"><span class="unit">% TH</span></span>
+          </label>
+        </div>
+        <span class="hint">Use the upgrade price GoMining shows for adding TH to that miner. The bonus is +5% from Silver I VIP and +10% from Diamond I.</span>
+        <div class="field range">
+          <div class="row"><label class="lbl" for="reShare">Share of rewards reinvested</label><output id="o-reShare" for="reShare"></output></div>
+          <input id="reShare" data-k="reShare" type="range" min="0" max="100" step="5">
+        </div>
+        <label class="field" for="reYears"><span class="lbl">Reinvest for</span>
+          <span class="ctl"><input id="reYears" data-k="reYears" type="number" inputmode="decimal" step="any" min="0"><span class="unit">yrs, then take BTC</span></span>
+        </label>
+      </fieldset>
+      <div class="re-out">
+        <p class="result-line" id="reLine1"></p>
+        <p class="result-line" id="reLine2"></p>
+        <div class="stats" id="reStats">
+          <div class="stat"><div class="k">Farm after reinvesting</div><div id="reTH" class="v">–</div></div>
+          <div class="stat"><div class="k">Net per day then, at today's numbers</div><div id="reNet" class="v">–</div></div>
+          <div class="stat"><div class="k" id="reKeptK">BTC kept</div><div id="reKept" class="v">–</div></div>
+          <div class="stat"><div class="k">Pulls ahead of taking BTC</div><div id="reCatch" class="v">–</div></div>
+        </div>
+        <p class="result-line" id="reLine3"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Farm vs. buying Bitcoin instead</h2>
+      <p class="sub" id="projSub"></p>
+      <div class="legend">
+        <span><i class="sw"></i>BTC mined, taking every reward</span>
+        <span id="legReinvest"><i class="sw alt"></i><span id="legReinvestText">BTC kept while reinvesting</span></span>
+        <span><i class="sw dash"></i>BTC you'd hold if you'd bought instead</span>
+      </div>
+      <div class="chart" id="chart"></div>
+      <div class="compare">
+        <div class="stat"><div class="k" id="cMinedK">Mined</div><div id="cMined" class="v">–</div></div>
+        <div class="stat"><div class="k">Bought instead</div><div id="cBought" class="v">–</div></div>
+        <div class="stat"><div class="k">Farm pays back in USD</div><div id="cPay" class="v">–</div></div>
+        <div class="stat"><div class="k">Resale needed to tie</div><div id="cResale" class="v">–</div></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </div>
+
+    <div class="panel">
       <h2>Efficiency upgrade value</h2>
       <p class="sub">How much each miner would save per year if upgraded. Compare it with the upgrade price GoMining shows for that miner.</p>
       <label class="field" for="target" style="margin-bottom:12px"><span class="lbl">Upgrade every miner to</span>
@@ -457,39 +548,9 @@ tr.total td { border-bottom: 0; font-weight: 600; padding-top: 10px; }
       <p class="hint" style="margin:10px 0 0">An upgrade priced under two years of savings pays for itself within two years.</p>
     </div>
 
-    <div class="panel">
-      <h2>Farm vs. buying Bitcoin instead</h2>
-      <div class="two proj-inputs">
-        <label class="field" for="years"><span class="lbl">Years to project</span>
-          <span class="ctl"><input id="years" data-k="years" type="number" inputmode="decimal" step="any" min="0.25" max="10"><span class="unit">yrs</span></span>
-        </label>
-        <label class="field" for="resale"><span class="lbl">Resale at end</span>
-          <span class="ctl"><input id="resale" data-k="resale" type="number" inputmode="decimal" step="any" min="0"><span class="unit">% paid</span></span>
-        </label>
-        <div class="field">
-          <label class="lbl" for="diff">Difficulty growth</label>
-          <span class="ctl"><input id="diff" data-k="diff" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="diff" aria-label="Flip difficulty growth between rising and falling">±</button></span>
-        </div>
-        <div class="field">
-          <label class="lbl" for="btcChg">BTC price change</label>
-          <span class="ctl"><input id="btcChg" data-k="btcChg" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="btcChg" aria-label="Flip BTC price change between up and down">±</button></span>
-        </div>
-      </div>
-      <p class="sub" id="projSub"></p>
-      <div class="legend"><span><i class="sw"></i>BTC the farm mines (net, running total)</span><span><i class="sw dash"></i>BTC you'd hold if you'd bought instead</span></div>
-      <div class="chart" id="chart"></div>
-      <div class="compare">
-        <div class="stat"><div class="k" id="cMinedK">Mined</div><div id="cMined" class="v">–</div></div>
-        <div class="stat"><div class="k">Bought instead</div><div id="cBought" class="v">–</div></div>
-        <div class="stat"><div class="k">Farm pays back in USD</div><div id="cPay" class="v">–</div></div>
-        <div class="stat"><div class="k">Resale needed to tie</div><div id="cResale" class="v">–</div></div>
-      </div>
-      <p class="verdict" id="verdict"></p>
-    </div>
-
     <div class="notes">
-      <p>Assumes fees stay at today's USD rates, the pool reward moves only with difficulty, and your farm doesn't change. The token discount uses GoMining's published table (1% per 18 days of fees covered, up to 20% at 360 days) and counts fees at their dollar value. Miner Wars prizes, promos and token price swings are not modeled.</p>
-      <p>Fee formula and discount rules from GoMining Docs: <a href="https://docs.gomining.com/en/product/miners/maintenance-fees-and-discounts" target="_blank" rel="noopener">Maintenance fees and discounts</a> and <a href="https://docs.gomining.com/en/product/miners/mining-mode" target="_blank" rel="noopener">Mining mode</a>. Live data from <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>. Estimates for planning only, not financial advice. For a single miner, use <a href="../">Miner Calc</a>.</p>
+      <p>Assumes fees stay at today's USD rates, the pool reward moves only with difficulty, and your farm doesn't change except through reinvesting. Reinvested TH get the chosen miner's efficiency at a fixed price per TH, discounts stay at today's percentage as the farm grows, and reinvested TH aren't counted in resale value. The token discount uses GoMining's published table (1% per 18 days of fees covered, up to 20% at 360 days). Miner Wars prizes, promos and token price swings are not modeled.</p>
+      <p>Fee, discount and reinvest rules from GoMining Docs: <a href="https://docs.gomining.com/en/product/miners/maintenance-fees-and-discounts" target="_blank" rel="noopener">Maintenance fees and discounts</a> and <a href="https://docs.gomining.com/en/product/miners/rewards" target="_blank" rel="noopener">Rewards</a>. Live data from <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>. Estimates for planning only, not financial advice. For a single miner, use <a href="../">Miner Calc</a>.</p>
     </div>
   </section>
 </main>
@@ -540,7 +601,7 @@ function tokenTier(days) {
   return Math.min(20, Math.floor(days / 18));
 }
 
-function calcFarm(miners, v) {
+function calcFarm(miners, v, reTargetId) {
   const list = miners.filter(m => m.th > 0);
   const th = list.reduce((a, m) => a + m.th, 0);
   const wAvg = th > 0 ? list.reduce((a, m) => a + m.th * m.wth, 0) / th : 0;
@@ -602,23 +663,68 @@ function calcFarm(miners, v) {
   });
   const upTotal = miners_.reduce((a, x) => a + x.upSave, 0);
 
-  // Projection, one step per day
   const days = Math.max(1, Math.round(v.years * 365));
   const g = 1 + v.diff / 100, pr = 1 + v.btcChg / 100;
+
+  // Reinvesting rewards into TH. GoMining adds them to one miner with 10-5000 TH,
+  // better than 20 W/TH and earning at least $0.10 a day, at its upgrade price, plus any VIP bonus.
+  const eligibleFor = x => x.m.th >= 10 && x.m.th <= 5000 && x.m.wth < 20 && x.net >= 0.10;
+  const eligible = miners_.filter(eligibleFor);
+  const target = eligible.find(x => x.m.id === reTargetId) ||
+    eligible.slice().sort((a, b) => b.net / b.m.th - a.net / a.m.th)[0] || null;
+  const share = Math.max(0, Math.min(100, v.reShare || 0)) / 100;
+  const bonus = Math.max(0, v.reBonus || 0) / 100;
+  const effPrice = v.thPrice > 0 ? v.thPrice / (1 + bonus) : Infinity;
+  const feePerTH = target ? (target.m.wth * 24 / 1000 * v.kwh + v.svc) * (1 - disc) : 0;
+  const netPerTH = target ? v.sats / 1e8 * v.btc - feePerTH : 0;
+  const thPaybackToday = netPerTH > 0 && Number.isFinite(effPrice) ? effPrice / netPerTH : Infinity;
+  let thPayback = null; // days for one reinvested TH to earn back the BTC spent on it, with the trends applied
+  if (target && v.btc > 0 && Number.isFinite(effPrice)) {
+    const spent = effPrice / v.btc;
+    let c = 0;
+    for (let d = 0; d < 365 * 15; d++) {
+      const t = d / 365;
+      c += v.sats / Math.pow(g, t) / 1e8 - feePerTH / (v.btc * Math.pow(pr, t));
+      if (c >= spent) { thPayback = d + 1; break; }
+    }
+  }
+  const reDays = Math.max(0, Math.min(days, Math.round((v.reYears || 0) * 365)));
+  const reOn = !!target && share > 0 && reDays > 0 && v.thPrice > 0;
+
+  // Projection, one step per day. Path A takes every reward as BTC.
+  // Path B reinvests a share for reDays, then keeps everything; it runs up to 10 more years to find when it pulls ahead.
   const step = Math.max(1, Math.floor(days / 160));
+  const maxDays = reOn ? days + 3650 : days;
   let cumBTC = 0, cumUSD = 0, payDay = null, lossDay = null;
-  const series = [[0, 0]];
-  for (let d = 0; d < days; d++) {
+  let cumA = 0, keptB = 0, extraTH = 0, keptBEnd = 0, catchDay = null;
+  const series = [[0, 0]], seriesB = reOn ? [[0, 0]] : null;
+  for (let d = 0; d < maxDays; d++) {
     const t = d / 365;
     const price = v.btc * Math.pow(pr, t);
-    const reward = th * (v.sats / Math.pow(g, t)) / 1e8;
-    const nb = reward - (price > 0 ? fees / price : 0);
-    if (nb < 0 && lossDay === null) lossDay = d + 1;
-    cumBTC += nb;
-    cumUSD += nb * price;
-    if (payDay === null && paid > 0 && cumUSD >= paid) payDay = d + 1;
-    if ((d + 1) % step === 0 || d === days - 1) series.push([d + 1, cumBTC]);
+    const perTHBTC = v.sats / Math.pow(g, t) / 1e8;
+    const nb = th * perTHBTC - (price > 0 ? fees / price : 0);
+    cumA += nb;
+    if (d < days) {
+      if (nb < 0 && lossDay === null) lossDay = d + 1;
+      cumBTC += nb;
+      cumUSD += nb * price;
+      if (payDay === null && paid > 0 && cumUSD >= paid) payDay = d + 1;
+      if ((d + 1) % step === 0 || d === days - 1) series.push([d + 1, cumBTC]);
+    }
+    if (reOn) {
+      const nbB = (th + extraTH) * perTHBTC - (price > 0 ? (fees + extraTH * feePerTH) / price : 0);
+      if (d < reDays && nbB > 0) {
+        const inv = nbB * share;
+        keptB += nbB - inv;
+        extraTH += inv * price / v.thPrice * (1 + bonus);
+      } else keptB += nbB;
+      if (d < days && ((d + 1) % step === 0 || d === days - 1)) seriesB.push([d + 1, keptB]);
+      if (d === days - 1) keptBEnd = keptB;
+      if (catchDay === null && keptB > cumA) catchDay = d + 1;
+    }
+    if (d >= days - 1 && (!reOn || catchDay !== null)) break;
   }
+  const netTodayB = netUSD + extraTH * netPerTH;
   const endPrice = v.btc * Math.pow(pr, days / 365);
   const boughtBTC = v.btc > 0 ? paid / v.btc : 0;
   const resaleUSD = paid * v.resale / 100;
@@ -631,7 +737,9 @@ function calcFarm(miners, v) {
     grossUSD, grossBTC, elec, service, feesBase, other, dTok, daysCovered, nextTier, tokensNext, tokens20,
     discPct, discUSD, fees, netUSD, netBTC, margin, breakeven, paybackDays, yearly,
     miners: miners_, upTotal,
-    days, series, cumBTC, cumUSD, payDay, lossDay, endPrice, boughtBTC, resaleUSD, resaleBTC, gapBTC, resaleNeededUSD
+    days, series, cumBTC, cumUSD, payDay, lossDay, endPrice, boughtBTC, resaleUSD, resaleBTC, gapBTC, resaleNeededUSD,
+    eligibleIds: eligible.map(x => x.m.id), target, share, bonus, effPrice, feePerTH, netPerTH, thPaybackToday, thPayback,
+    reDays, reOn, extraTH, netTodayB, keptBEnd, seriesB, catchDay
   };
 }
 /*CALC_END*/
@@ -645,7 +753,8 @@ const DEFAULTS = {
   btc: 85535, sats: 47.6,
   kwh: 0.05, svc: 0.0089,
   dService: 3, dVip: 0.6, dMode: 0, tokens: 0, tokenPrice: 0.40,
-  years: 2, diff: 15, btcChg: 0, resale: 0, target: 12
+  years: 2, diff: 15, btcChg: 0, resale: 0, target: 12,
+  thPrice: 22, reBonus: 5, reShare: 100, reYears: 1
 };
 const TABS = { farm: "Your farm", miners: "Miners", discounts: "Discounts", outlook: "Outlook" };
 const STORE_KEY = "farm-calc-v1";
@@ -657,9 +766,10 @@ let state = {
   miners: cloneMiners(EXAMPLE_MINERS),
   vals: Object.assign({}, DEFAULTS),
   liveBtc: true, liveSats: true,
-  net: null, fetchError: null,
+  net: null, fetchError: null, reTarget: null,
   tab: "farm", customized: false, installDismissed: false
 };
+const compute = () => calcFarm(state.miners, state.vals, state.reTarget);
 let fetching = false;
 let deferredInstall = null;
 
@@ -804,7 +914,7 @@ function showTab(name, fromLoad) {
   $("tabTitle").textContent = TABS[name];
   try { history.replaceState(null, "", "#" + name); } catch (e) { /* ignore */ }
   if (!fromLoad) window.scrollTo(0, 0);
-  if (name === "outlook") drawChart(calcFarm(state.miners, state.vals));
+  if (name === "outlook") drawChart(compute());
   saveState();
 }
 
@@ -864,7 +974,7 @@ function renderMinerSums(r) {
 // Main render (everything except the miner editor list)
 function render() {
   const v = state.vals;
-  const r = calcFarm(state.miners, v);
+  const r = compute();
 
   // Discount inputs
   $("o-dService").textContent = pct(v.dService);
@@ -1017,8 +1127,73 @@ function render() {
   if (r.lossDay) verdict += " Fees overtake the farm's reward around " + duration(r.lossDay) + " in.";
   $("verdict").textContent = verdict;
 
+  renderReinvest(r, v, yrsLabel);
   renderStatus();
   if (state.tab === "outlook") drawChart(r);
+}
+
+function trendText(v) {
+  return "difficulty " + (v.diff >= 0 ? "rising " : "falling ") + Math.abs(v.diff) + "% a year and BTC " +
+    (v.btcChg === 0 ? "flat" : (v.btcChg > 0 ? "up " : "down ") + Math.abs(v.btcChg) + "% a year");
+}
+
+function renderReinvest(r, v, yrsLabel) {
+  $("o-reShare").textContent = pct(v.reShare, 0);
+
+  // Miner picker: rebuild only when the miners or their eligibility change
+  const sel = $("reTarget");
+  const sig = r.miners.map(x => [x.m.id, minerName(x.m, state.miners.indexOf(x.m)), x.m.th, x.m.wth, r.eligibleIds.includes(x.m.id)].join(":")).join("|");
+  if (sel.dataset.sig !== sig) {
+    sel.innerHTML = r.miners.length ? r.miners.map(x => {
+      const ok = r.eligibleIds.includes(x.m.id);
+      return "<option value=\"" + esc(x.m.id) + "\"" + (ok ? "" : " disabled") + ">" + esc(minerName(x.m, state.miners.indexOf(x.m))) +
+        " · " + esc(numFmt(x.m.th, 2)) + " TH · " + esc(numFmt(x.m.wth, 1)) + " W/TH" + (ok ? "" : " (not eligible)") + "</option>";
+    }).join("") : "<option value=\"\">No miners yet</option>";
+    sel.dataset.sig = sig;
+  }
+  if (r.target) sel.value = r.target.m.id;
+  sel.disabled = !r.target;
+
+  const l1 = $("reLine1"), l2 = $("reLine2"), l3 = $("reLine3");
+  if (!r.target) {
+    l1.textContent = "None of your miners can receive reinvested TH yet. A miner needs at least 10 TH, better than 20 W/TH, and $0.10 a day in rewards.";
+    l2.textContent = ""; l3.textContent = "";
+    $("reStats").hidden = true;
+    return;
+  }
+  const name = minerName(r.target.m, state.miners.indexOf(r.target.m));
+  if (!(v.thPrice > 0)) {
+    l1.textContent = "Enter the price per TH GoMining shows for adding TH to " + name + ".";
+    l2.textContent = ""; l3.textContent = "";
+    $("reStats").hidden = true;
+    return;
+  }
+  const bonusTxt = r.bonus > 0 ? "With your " + pct(r.bonus * 100, 1) + " bonus, each TH effectively costs " + usd(r.effPrice, { cents: true }) + " instead of " + usd(v.thPrice, { cents: true }) + ". " : "";
+  l1.textContent = r.netPerTH > 0
+    ? bonusTxt + "Added to " + name + " (" + numFmt(r.target.m.wth, 1) + " W/TH), a TH nets " + usd(r.netPerTH) + " a day at today's numbers, so it pays for itself in " + duration(r.thPaybackToday) + "."
+    : bonusTxt + "Added to " + name + " (" + numFmt(r.target.m.wth, 1) + " W/TH), a TH would cost more in fees than it earns at today's numbers.";
+  l2.textContent = r.thPayback !== null
+    ? "With " + trendText(v) + ", it takes " + duration(r.thPayback) + " to earn back the BTC you spend on it."
+    : "With " + trendText(v) + ", it never earns back the BTC you spend on it (checked over 15 years).";
+
+  if (!r.reOn) {
+    $("reStats").hidden = true;
+    l3.textContent = "Set a share above 0% and how long to reinvest to compare it with taking every reward as BTC.";
+    return;
+  }
+  $("reStats").hidden = false;
+  const reYrs = Math.round(r.reDays / 365 * 10) / 10;
+  $("reTH").textContent = numFmt(r.th + r.extraTH, 2) + " TH";
+  $("reNet").textContent = usd(r.netTodayB);
+  $("reKeptK").textContent = "BTC kept after " + yrsLabel;
+  $("reKept").textContent = sats(r.keptBEnd);
+  $("reCatch").textContent = r.catchDay ? duration(r.catchDay) : "Not within 10 yrs";
+  let t3 = "Reinvesting " + pct(r.share * 100, 0) + " for " + reYrs + (reYrs === 1 ? " year" : " years") + " adds " + numFmt(r.extraTH, 2) + " TH to " + name +
+    ". After " + yrsLabel + " you'd have " + sats(r.keptBEnd) + ", versus " + sats(r.cumBTC) + " by taking every reward as BTC. ";
+  if (r.catchDay && r.catchDay <= r.days) t3 += "Reinvesting pulls ahead after " + duration(r.catchDay) + ".";
+  else if (r.catchDay) t3 += "Reinvesting pulls ahead after " + duration(r.catchDay) + ", past the end of this projection.";
+  else t3 += "At these numbers, reinvesting doesn't pull ahead within 10 years of stopping.";
+  l3.textContent = t3;
 }
 
 // Chart
@@ -1043,9 +1218,11 @@ function drawChart(r) {
   const padL = 44, padR = 12, padT = 12, padB = 24;
   const iw = W - padL - padR, ih = H - padT - padB;
   const pts = r.series.map(([d, b]) => [d, b * 1e8]);
+  const ptsB = r.reOn && r.seriesB ? r.seriesB.map(([d, b]) => [d, b * 1e8]) : [];
   const bought = r.boughtBTC * 1e8;
-  let yMin = Math.min(0, ...pts.map(p => p[1]));
-  let yMax = Math.max(bought, ...pts.map(p => p[1]), 1);
+  const all = pts.concat(ptsB).map(p => p[1]);
+  let yMin = Math.min(0, ...all);
+  let yMax = Math.max(bought, ...all, 1);
   const st = niceStep(yMax - yMin);
   yMin = Math.floor(yMin / st) * st;
   yMax = Math.ceil((yMax * 1.04) / st) * st;
@@ -1069,12 +1246,33 @@ function drawChart(r) {
   const area = line + " L" + x(pts[pts.length - 1][0]).toFixed(1) + " " + y(0).toFixed(1) + " L" + x(0).toFixed(1) + " " + y(0).toFixed(1) + " Z";
   const by = y(bought).toFixed(1);
   const last = pts[pts.length - 1];
+  let lineB = "";
+  if (ptsB.length) {
+    const pathB = ptsB.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join(" ");
+    const lastB = ptsB[ptsB.length - 1];
+    const stopX = x(r.reDays).toFixed(1);
+    lineB = (r.reDays < r.days
+      ? "<line x1=\"" + stopX + "\" x2=\"" + stopX + "\" y1=\"" + padT + "\" y2=\"" + (padT + ih) + "\" stroke=\"var(--series2)\" stroke-width=\"1\" stroke-dasharray=\"2 3\"/>" +
+        (+stopX > W - 120
+          ? "<text x=\"" + (+stopX - 4) + "\" y=\"" + (padT + 11) + "\" text-anchor=\"end\">stop reinvesting</text>"
+          : "<text x=\"" + (+stopX + 4) + "\" y=\"" + (padT + 11) + "\" text-anchor=\"start\">stop reinvesting</text>")
+      : "") +
+      "<path d=\"" + pathB + "\" fill=\"none\" stroke=\"var(--series2)\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>" +
+      "<circle cx=\"" + x(lastB[0]).toFixed(1) + "\" cy=\"" + y(lastB[1]).toFixed(1) + "\" r=\"4\" fill=\"var(--series2)\" stroke=\"var(--surface)\" stroke-width=\"2\"/>";
+  }
+  const legB = $("legReinvest");
+  legB.hidden = !ptsB.length;
+  if (ptsB.length) {
+    const reYrs = Math.round(r.reDays / 365 * 10) / 10;
+    $("legReinvestText").textContent = "BTC kept, reinvesting " + pct(r.share * 100, 0) + " for " + reYrs + (reYrs === 1 ? " yr" : " yrs");
+  }
   box.innerHTML =
-    "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Running total of BTC the farm mines compared with BTC bought instead\">" + g +
+    "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Running total of BTC the farm mines, with and without reinvesting, compared with BTC bought instead\">" + g +
     "<path d=\"" + area + "\" fill=\"var(--accent)\" fill-opacity=\"0.12\" stroke=\"none\"/>" +
     "<line x1=\"" + padL + "\" x2=\"" + (W - padR) + "\" y1=\"" + by + "\" y2=\"" + by + "\" stroke=\"var(--muted)\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>" +
     "<path d=\"" + line + "\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>" +
     "<circle cx=\"" + x(last[0]).toFixed(1) + "\" cy=\"" + y(last[1]).toFixed(1) + "\" r=\"4\" fill=\"var(--accent)\" stroke=\"var(--surface)\" stroke-width=\"2\"/>" +
+    lineB +
     "</svg>";
 }
 
@@ -1157,6 +1355,10 @@ $("reset").addEventListener("click", () => {
   maybeRefresh();
 });
 
+$("reTarget").addEventListener("change", e => {
+  state.reTarget = e.target.value || null;
+  saveState(); render();
+});
 $("liveBtc").addEventListener("change", e => {
   state.liveBtc = e.target.checked;
   if (state.liveBtc && state.net) { state.vals.btc = state.net.price; fillFields(); }
@@ -1188,7 +1390,7 @@ window.addEventListener("online", () => maybeRefresh());
 let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { if (state.tab === "outlook") drawChart(calcFarm(state.miners, state.vals)); }, 120);
+  resizeTimer = setTimeout(() => { if (state.tab === "outlook") drawChart(compute()); }, 120);
 });
 
 maybeRefresh();
