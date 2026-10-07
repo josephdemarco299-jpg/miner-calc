@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GoMining Farm Calculator</title>
+<meta name="description" content="Net rewards, discounts, per-miner results and outlook for a whole GoMining mining farm.">
+<meta name="theme-color" content="#18211B" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A0E0B" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Farm Calc">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone app shell shared with Miner Calc. Dark instrument bar on top (farm net/day always visible), one tab of content, tab bar at the bottom. Centered 560px column on larger screens. */
+:root {
+  --ground: #EEF1EC;
+  --surface: #FFFFFF;
+  --ink: #18211B;
+  --muted: #5B685F;
+  --line: #D8DFD6;
+  --accent: #8F6410;
+  --accent-soft: #F3E9D2;
+  --pos: #1E7A4F;
+  --pos-soft: #DDF0E5;
+  --neg: #B3372B;
+  --neg-soft: #F7E1DD;
+  --warn: #8A5F00;
+  --warn-soft: #F6EDCF;
+  --bar: #18211B;
+  --bar-line: #2C3830;
+  --bar-ink: #EEF1EC;
+  --bar-muted: #9AA89F;
+  --bar-accent: #E2B450;
+  --bar-pos: #53C690;
+  --bar-warn: #E8C062;
+  --bar-neg: #F0806F;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 12px;
+  --tabbar-h: 58px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0F1411; --surface: #161D18; --ink: #E4EBE5; --muted: #93A097; --line: #28322B;
+    --accent: #E2B450; --accent-soft: #2E2715; --pos: #53C690; --pos-soft: #15291F;
+    --neg: #F0806F; --neg-soft: #331B18; --warn: #E8C062; --warn-soft: #2E2812;
+    --bar: #0A0E0B; --bar-line: #222B25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0F1411; --surface: #161D18; --ink: #E4EBE5; --muted: #93A097; --line: #28322B;
+  --accent: #E2B450; --accent-soft: #2E2715; --pos: #53C690; --pos-soft: #15291F;
+  --neg: #F0806F; --neg-soft: #331B18; --warn: #E8C062; --warn-soft: #2E2812;
+  --bar: #0A0E0B; --bar-line: #222B25;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--bar); }
+body {
+  margin: 0; min-height: 100vh;
+  background: var(--ground); color: var(--ink);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* App bar */
+.appbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bar); color: var(--bar-ink); border-bottom: 1px solid var(--bar-line);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-bottom: 10px;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+}
+.appbar-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ab-title { display: grid; line-height: 1.15; min-width: 0; }
+.ab-app { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bar-muted); }
+.ab-title h1 { margin: 0; font-family: var(--f-display); font-stretch: 80%; font-weight: 800; font-size: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini { display: grid; justify-items: end; line-height: 1.15; flex: none; }
+.mini-val { font-family: var(--f-display); font-stretch: 75%; font-weight: 800; font-size: 24px; color: var(--bar-accent); font-variant-numeric: tabular-nums; }
+.mini-val small { font-size: 0.55em; font-weight: 600; color: var(--bar-muted); margin-left: 2px; }
+.mini-val.neg { color: var(--bar-neg); }
+.mini-st { font-size: 12px; color: var(--bar-muted); display: inline-flex; align-items: center; gap: 6px; }
+.mini-st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--bar-pos); }
+.mini-st.warn::before { background: var(--bar-warn); }
+.mini-st.neg::before { background: var(--bar-neg); }
+
+/* Content */
+main {
+  max-width: 560px; margin: 0 auto;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+  padding-block: 16px calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 24px);
+}
+.tab { display: grid; gap: 14px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 19px; margin: 0 0 4px; text-wrap: balance; }
+.sub { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+
+/* Tab bar */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+}
+.tabbar-in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tabbar button {
+  appearance: none; border: 0; background: transparent; color: var(--muted);
+  font: inherit; font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+  height: var(--tabbar-h); display: grid; justify-items: center; align-content: center; gap: 3px;
+  cursor: pointer; -webkit-user-select: none; user-select: none;
+}
+.tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button[aria-selected="true"] { color: var(--accent); }
+.tabbar button[aria-selected="true"] svg { stroke-width: 2.2; }
+
+/* Banners */
+.banner { display: flex; gap: 10px; align-items: flex-start; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.banner p { margin: 0; flex: 1; min-width: 0; }
+.banner svg { width: 16px; height: 16px; vertical-align: -3px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.banner .x { appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; padding: 0 2px; cursor: pointer; }
+.linkbtn { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+/* Readout */
+.ro-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ro-label { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.pos { color: var(--pos); background: var(--pos-soft); }
+.chip.warn { color: var(--warn); background: var(--warn-soft); }
+.chip.neg { color: var(--neg); background: var(--neg-soft); }
+.chip.sm { font-size: 12px; padding: 2px 8px; }
+.big { font-family: var(--f-display); font-stretch: 75%; font-weight: 800; font-size: clamp(48px, 15vw, 64px); line-height: 1; margin: 10px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.big small { font-size: 0.38em; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
+.big.neg { color: var(--neg); }
+.ro-note { margin: 0; color: var(--muted); font-size: 14px; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 14px; }
+.stats.flush { margin-top: 0; }
+.stat { background: var(--surface); padding: 10px 12px; min-width: 0; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
+.alert { padding: 10px 12px; border-radius: 8px; font-size: 14px; background: var(--neg-soft); color: var(--neg); }
+
+/* Farm level */
+.levelbox { display: grid; gap: 6px; margin-top: 14px; }
+.levelrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+.levelrow b { font-weight: 600; }
+.levelrow span:last-child { color: var(--muted); font-size: 13px; text-align: right; }
+.track { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* By-miner bars */
+.mrows { display: grid; gap: 12px; }
+.mrow { display: grid; gap: 5px; }
+.mrow-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.mrow-name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.mrow-name small { display: block; font-weight: 400; color: var(--muted); font-family: var(--f-mono); font-size: 12.5px; }
+.mrow-val { text-align: right; flex: none; display: grid; justify-items: end; gap: 2px; }
+.mrow-val .num { font-size: 15px; font-weight: 500; }
+.mbar { height: 10px; border-radius: 3px; background: var(--ground); overflow: hidden; }
+.mbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.mbar i.neg { background: var(--neg); }
+.insight { margin: 12px 0 0; font-size: 14px; padding-top: 10px; border-top: 1px dashed var(--line); }
+
+/* Live data row */
+.datarow { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); padding: 0 2px; }
+.datarow span { min-width: 0; }
+.datarow .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: 1px; }
+.datarow .dot.live { background: var(--pos); }
+.datarow .dot.err { background: var(--neg); }
+button.small { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; flex: none; }
+button.small:disabled { opacity: 0.55; cursor: default; }
+
+/* Forms */
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; min-width: 0; }
+legend { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); padding: 0; margin-bottom: 10px; display: flex; gap: 8px; align-items: baseline; width: 100%; }
+legend .tag { color: var(--muted); text-transform: none; letter-spacing: 0; font-family: var(--f-body); font-size: 13px; margin-left: auto; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.lblrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lbl { font-size: 14px; font-weight: 500; }
+.ctl { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--ground); overflow: hidden; min-height: 44px; min-width: 0; }
+.ctl:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ctl input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--ink); font-family: var(--f-mono); font-size: 16px; padding: 10px; outline: none; font-variant-numeric: tabular-nums; }
+.ctl input.text { font-family: var(--f-body); }
+.ctl .unit { padding: 0 10px 0 4px; color: var(--muted); font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+.ctl .pre { padding-left: 10px; color: var(--muted); font-family: var(--f-mono); }
+.ctl .sign { appearance: none; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; font-family: var(--f-mono); font-size: 16px; width: 44px; align-self: stretch; cursor: pointer; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.switch input { appearance: none; -webkit-appearance: none; margin: 0; flex: none; cursor: pointer; width: 40px; height: 24px; border-radius: 999px; background: var(--line); position: relative; transition: background 0.15s; }
+.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); transition: transform 0.15s; }
+.switch input:checked { background: var(--pos); }
+.switch input:checked::after { transform: translateX(16px); }
+.range .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.range output { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--accent); font-weight: 500; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0 0; height: 28px; }
+.total-disc { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; border-top: 1px dashed var(--line); padding-top: 10px; font-size: 14px; }
+.calcd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; background: var(--ground); border-radius: 8px; padding: 10px 12px; }
+.calcd b { font-family: var(--f-mono); font-weight: 500; color: var(--accent); white-space: nowrap; }
+button.ghost { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 14px; cursor: pointer; width: 100%; }
+button.ghost.danger { color: var(--neg); border-color: var(--neg); }
+button.add { appearance: none; border: 1px dashed var(--accent); background: transparent; color: var(--accent); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
+
+/* Miner editor */
+.mlist { display: grid; gap: 12px; margin-bottom: 12px; }
+.mcard { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 10px; background: var(--surface); }
+.mcard-top { display: flex; gap: 8px; align-items: center; }
+.mcard-top .ctl { flex: 1; }
+.mcard .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mcard .field .lbl { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.mcard .ctl input { padding: 10px 6px 10px 8px; }
+.mcard .ctl .pre { padding-left: 8px; }
+.mcard .ctl .unit { padding-right: 8px; font-size: 12px; }
+button.remove { appearance: none; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; height: 44px; padding: 0 12px; font: inherit; font-size: 13px; cursor: pointer; flex: none; }
+button.remove.armed { color: var(--surface); background: var(--neg); border-color: var(--neg); }
+.mcard-sum { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.mcard-sum b { color: var(--ink); font-weight: 500; font-family: var(--f-mono); }
+
+/* Tables */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; padding-left: 0; }
+th:last-child, td:last-child { padding-right: 0; }
+thead th { font-weight: 500; font-size: 12px; color: var(--muted); font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+tr.total td { border-bottom: 0; font-weight: 600; padding-top: 10px; }
+.minus { color: var(--neg); }
+.plus { color: var(--pos); }
+
+/* Levers */
+.lever { display: grid; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.lever:first-child { padding-top: 0; }
+.lever:last-child { border-bottom: 0; padding-bottom: 0; }
+.lever-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
+.lever-name { font-weight: 600; }
+.lever-vals { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); }
+.lever-vals b { color: var(--ink); font-weight: 500; }
+.lever p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.lever p strong { color: var(--ink); font-weight: 500; }
+
+/* Outlook */
+.verdict { margin: 12px 0 0; font-size: 14.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 0; border-top: 2.5px solid var(--accent); display: inline-block; }
+.sw.dash { border-top: 2px dashed var(--muted); }
+.chart { width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.proj-inputs { margin-bottom: 14px; }
+.notes { font-size: 13px; color: var(--muted); display: grid; gap: 6px; padding: 0 2px; }
+.notes p { margin: 0; }
+.notes a { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .switch input, .switch input::after { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="ab-title">
+      <span class="ab-app">Farm Calc</span>
+      <h1 id="tabTitle">Your farm</h1>
+    </div>
+    <div class="mini" aria-live="polite">
+      <span id="miniVal" class="mini-val">$0.00<small>/day</small></span>
+      <span id="miniSt" class="mini-st">Profitable</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- FARM -->
+  <section class="tab" id="tab-farm" role="tabpanel" aria-labelledby="t-farm">
+    <div id="installBanner" class="banner" hidden>
+      <p id="installText"></p>
+      <button type="button" class="x" id="installClose" aria-label="Dismiss">&times;</button>
+    </div>
+    <div id="exampleBanner" class="banner" hidden>
+      <p>This is an example farm with three miners. <button type="button" class="linkbtn" data-goto="miners">Enter your miners</button> to see your own results.</p>
+    </div>
+
+    <div class="panel">
+      <div class="ro-head">
+        <span class="ro-label">Farm net reward per day</span>
+        <span id="chip" class="chip pos">Profitable</span>
+      </div>
+      <div id="bigNet" class="big">$0.00<small>/day</small></div>
+      <p id="roNote" class="ro-note"></p>
+      <div class="stats">
+        <div class="stat"><div class="k">Per month</div><div id="sMonth" class="v">–</div></div>
+        <div class="stat"><div class="k">Per year</div><div id="sYear" class="v">–</div></div>
+        <div class="stat"><div class="k">Farm payback at today's numbers</div><div id="sPayback" class="v">–</div></div>
+        <div class="stat"><div class="k">Break-even BTC price</div><div id="sBreak" class="v">–</div></div>
+      </div>
+    </div>
+
+    <div class="datarow">
+      <span id="dataStatus"><i class="dot"></i>Live data not loaded yet</span>
+      <button type="button" class="small" id="refreshBtn">Refresh</button>
+    </div>
+
+    <div id="alert" class="alert" hidden></div>
+
+    <div class="panel">
+      <h2>Farm at a glance</h2>
+      <div class="stats flush">
+        <div class="stat"><div class="k">Total power</div><div id="gTH" class="v">–</div></div>
+        <div class="stat"><div class="k">Average efficiency</div><div id="gW" class="v">–</div></div>
+        <div class="stat"><div class="k">Miners</div><div id="gN" class="v">–</div></div>
+        <div class="stat"><div class="k">Total paid</div><div id="gPaid" class="v">–</div></div>
+      </div>
+      <div class="levelbox">
+        <div class="levelrow"><span>Mining farm level: <b id="lvlName">–</b></span><span id="lvlNext"></span></div>
+        <div class="track" aria-hidden="true"><i id="lvlBar" style="width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Net reward by miner</h2>
+      <p class="sub">What each miner adds to the farm per day after its share of fees and your discounts.</p>
+      <div class="mrows" id="byMiner"></div>
+      <p class="insight" id="insight" hidden></p>
+    </div>
+
+    <div class="panel">
+      <h2>Where each day's reward goes</h2>
+      <p class="sub">Net = pool reward − (electricity + service) × (1 − discounts), the formula GoMining uses.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>USD/day</th><th>sats/day</th></tr></thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- MINERS -->
+  <section class="tab" id="tab-miners" role="tabpanel" aria-labelledby="t-miners" hidden>
+    <div class="panel">
+      <h2>Your miners</h2>
+      <p class="sub">Add each digital miner from your Mining farm page with its power, efficiency and what you paid.</p>
+      <div class="mlist" id="mlist"></div>
+      <button type="button" class="add" id="addMiner">+ Add a miner</button>
+    </div>
+
+    <div class="panel">
+      <fieldset>
+        <legend>Bitcoin today</legend>
+        <div class="field">
+          <div class="lblrow">
+            <label class="lbl" for="btc">BTC price</label>
+            <label class="switch" for="liveBtc"><input type="checkbox" id="liveBtc">Live</label>
+          </div>
+          <span class="ctl"><span class="pre">$</span><input id="btc" data-k="btc" type="number" inputmode="decimal" step="any" min="0"></span>
+        </div>
+        <div class="field">
+          <div class="lblrow">
+            <label class="lbl" for="sats">Pool reward per TH</label>
+            <label class="switch" for="liveSats"><input type="checkbox" id="liveSats">Live</label>
+          </div>
+          <span class="ctl"><input id="sats" data-k="sats" type="number" inputmode="decimal" step="any" min="0"><span class="unit">sats/TH/day</span></span>
+          <span class="hint">Live uses the network average from mempool.space. For your exact figure, divide the pool reward on your GoMining Rewards page by your total TH. Typing a number turns Live off.</span>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="panel">
+      <fieldset>
+        <legend>Fees before discounts</legend>
+        <label class="field" for="kwh"><span class="lbl">Electricity</span>
+          <span class="ctl"><span class="pre">$</span><input id="kwh" data-k="kwh" type="number" inputmode="decimal" step="any" min="0"><span class="unit">per kWh</span></span>
+        </label>
+        <label class="field" for="svc"><span class="lbl">Service</span>
+          <span class="ctl"><span class="pre">$</span><input id="svc" data-k="svc" type="number" inputmode="decimal" step="any" min="0"><span class="unit">per TH per day</span></span>
+        </label>
+        <span class="hint">GoMining bills electricity at its average cost of $0.05–$0.07 per kWh. The service rate is an estimate; your Rewards page shows the real one.</span>
+      </fieldset>
+    </div>
+
+    <button type="button" class="ghost" id="reset">Reset to the example farm</button>
+  </section>
+
+  <!-- DISCOUNTS -->
+  <section class="tab" id="tab-discounts" role="tabpanel" aria-labelledby="t-discounts" hidden>
+    <div class="panel">
+      <fieldset>
+        <legend>Your discounts <span class="tag">apply to the whole farm</span></legend>
+        <div class="field range">
+          <div class="row"><label class="lbl" for="dService">Service button streak</label><output id="o-dService" for="dService"></output></div>
+          <input id="dService" data-k="dService" type="range" min="0" max="3" step="0.3">
+        </div>
+        <div class="field range">
+          <div class="row"><label class="lbl" for="dVip">VIP status</label><output id="o-dVip" for="dVip"></output></div>
+          <input id="dVip" data-k="dVip" type="range" min="0" max="6" step="0.1">
+          <span class="hint">Your VIP status page in GoMining shows this. It's set by your total TH or veGOMINING votes.</span>
+        </div>
+        <label class="field" for="dMode"><span class="lbl">Mining mode discount</span>
+          <span class="ctl"><input id="dMode" data-k="dMode" type="number" inputmode="decimal" step="any" min="0"><span class="unit">%</span></span>
+          <span class="hint">Changes weekly; check the Maintenance block on your Rewards page.</span>
+        </label>
+        <div class="two">
+          <label class="field" for="tokens"><span class="lbl">GOMINING you hold</span>
+            <span class="ctl"><input id="tokens" data-k="tokens" type="number" inputmode="decimal" step="any" min="0"><span class="unit">tokens</span></span>
+          </label>
+          <label class="field" for="tokenPrice"><span class="lbl">GOMINING price</span>
+            <span class="ctl"><span class="pre">$</span><input id="tokenPrice" data-k="tokenPrice" type="number" inputmode="decimal" step="any" min="0"></span>
+          </label>
+        </div>
+        <span class="hint">Count your virtual wallet plus locked tokens, and turn on paying maintenance in GOMINING. The token was about $0.40 on Oct 7, 2026.</span>
+        <div class="calcd"><span id="tokDays">Token discount</span><b id="tokPct">0%</b></div>
+        <div class="total-disc"><span>Total discount</span><span id="discTotal" class="num">0%</span></div>
+      </fieldset>
+    </div>
+
+    <div class="panel">
+      <h2>Which discounts are worth it</h2>
+      <p class="sub">Yearly savings across your whole farm at each lever's current setting and at its maximum.</p>
+      <div id="levers"></div>
+    </div>
+  </section>
+
+  <!-- OUTLOOK -->
+  <section class="tab" id="tab-outlook" role="tabpanel" aria-labelledby="t-outlook" hidden>
+    <div class="panel">
+      <h2>Efficiency upgrade value</h2>
+      <p class="sub">How much each miner would save per year if upgraded. Compare it with the upgrade price GoMining shows for that miner.</p>
+      <label class="field" for="target" style="margin-bottom:12px"><span class="lbl">Upgrade every miner to</span>
+        <span class="ctl"><input id="target" data-k="target" type="number" inputmode="decimal" step="any" min="0"><span class="unit">W/TH</span></span>
+      </label>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Miner</th><th>Now</th><th>Saves/yr</th></tr></thead>
+          <tbody id="upgrades"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin:10px 0 0">An upgrade priced under two years of savings pays for itself within two years.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Farm vs. buying Bitcoin instead</h2>
+      <div class="two proj-inputs">
+        <label class="field" for="years"><span class="lbl">Years to project</span>
+          <span class="ctl"><input id="years" data-k="years" type="number" inputmode="decimal" step="any" min="0.25" max="10"><span class="unit">yrs</span></span>
+        </label>
+        <label class="field" for="resale"><span class="lbl">Resale at end</span>
+          <span class="ctl"><input id="resale" data-k="resale" type="number" inputmode="decimal" step="any" min="0"><span class="unit">% paid</span></span>
+        </label>
+        <div class="field">
+          <label class="lbl" for="diff">Difficulty growth</label>
+          <span class="ctl"><input id="diff" data-k="diff" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="diff" aria-label="Flip difficulty growth between rising and falling">±</button></span>
+        </div>
+        <div class="field">
+          <label class="lbl" for="btcChg">BTC price change</label>
+          <span class="ctl"><input id="btcChg" data-k="btcChg" type="number" inputmode="decimal" step="any"><span class="unit">%/yr</span><button type="button" class="sign" data-for="btcChg" aria-label="Flip BTC price change between up and down">±</button></span>
+        </div>
+      </div>
+      <p class="sub" id="projSub"></p>
+      <div class="legend"><span><i class="sw"></i>BTC the farm mines (net, running total)</span><span><i class="sw dash"></i>BTC you'd hold if you'd bought instead</span></div>
+      <div class="chart" id="chart"></div>
+      <div class="compare">
+        <div class="stat"><div class="k" id="cMinedK">Mined</div><div id="cMined" class="v">–</div></div>
+        <div class="stat"><div class="k">Bought instead</div><div id="cBought" class="v">–</div></div>
+        <div class="stat"><div class="k">Farm pays back in USD</div><div id="cPay" class="v">–</div></div>
+        <div class="stat"><div class="k">Resale needed to tie</div><div id="cResale" class="v">–</div></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+    </div>
+
+    <div class="notes">
+      <p>Assumes fees stay at today's USD rates, the pool reward moves only with difficulty, and your farm doesn't change. The token discount uses GoMining's published table (1% per 18 days of fees covered, up to 20% at 360 days) and counts fees at their dollar value. Miner Wars prizes, promos and token price swings are not modeled.</p>
+      <p>Fee formula and discount rules from GoMining Docs: <a href="https://docs.gomining.com/en/product/miners/maintenance-fees-and-discounts" target="_blank" rel="noopener">Maintenance fees and discounts</a> and <a href="https://docs.gomining.com/en/product/miners/mining-mode" target="_blank" rel="noopener">Mining mode</a>. Live data from <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>. Estimates for planning only, not financial advice. For a single miner, use <a href="../">Miner Calc</a>.</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="tabbar-in" role="tablist">
+    <button type="button" role="tab" id="t-farm" data-tab="farm" aria-controls="tab-farm" aria-selected="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+      Farm
+    </button>
+    <button type="button" role="tab" id="t-miners" data-tab="miners" aria-controls="tab-miners" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/><rect x="10" y="10" width="4" height="4" rx=".5"/><path d="M9.5 3v3.5M14.5 3v3.5M9.5 17.5V21M14.5 17.5V21M3 9.5h3.5M3 14.5h3.5M17.5 9.5H21M17.5 14.5H21"/></svg>
+      Miners
+    </button>
+    <button type="button" role="tab" id="t-discounts" data-tab="discounts" aria-controls="tab-discounts" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1a1 1 0 0 1 .7.3l7.4 7.4a1 1 0 0 1 0 1.4l-8.1 8.1a1 1 0 0 1-1.4 0l-7.4-7.4a1 1 0 0 1-.3-.7z"/><circle cx="8" cy="8" r="1.4"/></svg>
+      Discounts
+    </button>
+    <button type="button" role="tab" id="t-outlook" data-tab="outlook" aria-controls="tab-outlook" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 19.5h17"/><path d="M5 16l4.5-5 3.5 3 6-7"/><path d="M15 7h4v4"/></svg>
+      Outlook
+    </button>
+  </div>
+</nav>
+
+<script>
+/*CALC_START*/
+const FARM_LEVELS = [[1,"Hashboard S"],[5,"Hashboard M"],[10,"Hashboard L"],[25,"Hashboard XL"],[50,"Miner S"],[100,"Miner M"],[200,"Miner L"],[500,"Shelf S"],[1000,"Shelf M"],[2500,"HYDRO bath S"],[5000,"HYDRO bath M"],[7000,"Rack S"],[9000,"Rack M"],[12000,"Container S"],[20000,"Container M"],[50000,"HYDRO container"],[100000,"Data center S"],[250000,"Data center M"],[400000,"Data center L"],[750000,"Mining city"],[1000000,"Mining empire"]];
+
+function farmLevel(th) {
+  let name = null, at = 0, next = FARM_LEVELS[0];
+  for (let i = 0; i < FARM_LEVELS.length; i++) {
+    if (th >= FARM_LEVELS[i][0]) { name = FARM_LEVELS[i][1]; at = FARM_LEVELS[i][0]; next = FARM_LEVELS[i + 1] || null; }
+  }
+  const progress = next ? Math.max(0, Math.min(1, (th - at) / (next[0] - at))) : 1;
+  return { name, next, progress };
+}
+
+// Expected sats per TH per day from average block reward and network difficulty.
+function satsPerTHFromNetwork(avgBlockRewardSats, difficulty) {
+  if (!(avgBlockRewardSats > 0) || !(difficulty > 0)) return NaN;
+  return avgBlockRewardSats * 86400 * 1e12 / (difficulty * 4294967296);
+}
+
+// GoMining token discount: 1% per full 18 days of maintenance your GOMINING covers, max 20% at 360+ days.
+function tokenTier(days) {
+  if (!(days > 0)) return 0;
+  return Math.min(20, Math.floor(days / 18));
+}
+
+function calcFarm(miners, v) {
+  const list = miners.filter(m => m.th > 0);
+  const th = list.reduce((a, m) => a + m.th, 0);
+  const wAvg = th > 0 ? list.reduce((a, m) => a + m.th * m.wth, 0) / th : 0;
+  const paid = list.reduce((a, m) => a + (m.paid || 0), 0);
+
+  const per = list.map(m => {
+    const gross = m.th * v.sats / 1e8 * v.btc;
+    const elec = m.th * m.wth * 24 / 1000 * v.kwh;
+    const service = m.th * v.svc;
+    return { m, gross, elec, service, base: elec + service };
+  });
+  const grossUSD = per.reduce((a, p) => a + p.gross, 0);
+  const grossBTC = th * v.sats / 1e8;
+  const elec = per.reduce((a, p) => a + p.elec, 0);
+  const service = per.reduce((a, p) => a + p.service, 0);
+  const feesBase = elec + service;
+
+  // Token discount depends on the fee it discounts, so settle it by iterating upward.
+  const other = v.dService + v.dVip + v.dMode;
+  const feeAt = t => feesBase * (1 - Math.min(other + t, 100) / 100);
+  const holdUSD = v.tokens * v.tokenPrice;
+  let dTok = 0;
+  if (holdUSD > 0 && feesBase > 0) {
+    for (let i = 0; i < 25; i++) {
+      const f = feeAt(dTok);
+      const next = f > 0 ? tokenTier(holdUSD / f) : 20;
+      if (next <= dTok) break;
+      dTok = next;
+    }
+  }
+  const feeNow = feeAt(dTok);
+  const daysCovered = holdUSD > 0 ? (feeNow > 0 ? holdUSD / feeNow : Infinity) : 0;
+  const tokensFor = t => v.tokenPrice > 0 ? 18 * t * feeAt(t) / v.tokenPrice : NaN;
+  const nextTier = dTok < 20 ? dTok + 1 : null;
+  const tokensNext = nextTier ? tokensFor(nextTier) : NaN;
+  const tokens20 = tokensFor(20);
+
+  const discPct = Math.min(other + dTok, 100);
+  const disc = discPct / 100;
+  const discUSD = feesBase * disc;
+  const fees = feesBase - discUSD;
+  const netUSD = grossUSD - fees;
+  const netBTC = v.btc > 0 ? netUSD / v.btc : 0;
+  const margin = grossUSD > 0 ? netUSD / grossUSD : 0;
+  const breakeven = grossBTC > 0 ? fees / grossBTC : Infinity;
+  const paybackDays = netUSD > 0 ? paid / netUSD : Infinity;
+  const yearly = pct => feesBase * pct / 100 * 365;
+
+  const miners_ = per.map(p => {
+    const f = p.base * (1 - disc);
+    const net = p.gross - f;
+    const upSave = p.m.th * Math.max(p.m.wth - v.target, 0) * 24 / 1000 * v.kwh * (1 - disc) * 365;
+    return {
+      m: p.m, gross: p.gross, fees: f, net,
+      margin: p.gross > 0 ? net / p.gross : 0,
+      payback: net > 0 && p.m.paid > 0 ? p.m.paid / net : Infinity,
+      upSave
+    };
+  });
+  const upTotal = miners_.reduce((a, x) => a + x.upSave, 0);
+
+  // Projection, one step per day
+  const days = Math.max(1, Math.round(v.years * 365));
+  const g = 1 + v.diff / 100, pr = 1 + v.btcChg / 100;
+  const step = Math.max(1, Math.floor(days / 160));
+  let cumBTC = 0, cumUSD = 0, payDay = null, lossDay = null;
+  const series = [[0, 0]];
+  for (let d = 0; d < days; d++) {
+    const t = d / 365;
+    const price = v.btc * Math.pow(pr, t);
+    const reward = th * (v.sats / Math.pow(g, t)) / 1e8;
+    const nb = reward - (price > 0 ? fees / price : 0);
+    if (nb < 0 && lossDay === null) lossDay = d + 1;
+    cumBTC += nb;
+    cumUSD += nb * price;
+    if (payDay === null && paid > 0 && cumUSD >= paid) payDay = d + 1;
+    if ((d + 1) % step === 0 || d === days - 1) series.push([d + 1, cumBTC]);
+  }
+  const endPrice = v.btc * Math.pow(pr, days / 365);
+  const boughtBTC = v.btc > 0 ? paid / v.btc : 0;
+  const resaleUSD = paid * v.resale / 100;
+  const resaleBTC = endPrice > 0 ? resaleUSD / endPrice : 0;
+  const gapBTC = cumBTC + resaleBTC - boughtBTC;
+  const resaleNeededUSD = Math.max(0, (boughtBTC - cumBTC) * endPrice);
+
+  return {
+    th, wAvg, paid, count: list.length,
+    grossUSD, grossBTC, elec, service, feesBase, other, dTok, daysCovered, nextTier, tokensNext, tokens20,
+    discPct, discUSD, fees, netUSD, netBTC, margin, breakeven, paybackDays, yearly,
+    miners: miners_, upTotal,
+    days, series, cumBTC, cumUSD, payDay, lossDay, endPrice, boughtBTC, resaleUSD, resaleBTC, gapBTC, resaleNeededUSD
+  };
+}
+/*CALC_END*/
+
+const EXAMPLE_MINERS = [
+  { id: "m1", name: "Starter miner", th: 10, wth: 15, paid: 220 },
+  { id: "m2", name: "12 W/TH miner", th: 8, wth: 12, paid: 176 },
+  { id: "m3", name: "Old 20 W/TH miner", th: 4, wth: 20, paid: 110 }
+];
+const DEFAULTS = {
+  btc: 85535, sats: 47.6,
+  kwh: 0.05, svc: 0.0089,
+  dService: 3, dVip: 0.6, dMode: 0, tokens: 0, tokenPrice: 0.40,
+  years: 2, diff: 15, btcChg: 0, resale: 0, target: 12
+};
+const TABS = { farm: "Your farm", miners: "Miners", discounts: "Discounts", outlook: "Outlook" };
+const STORE_KEY = "farm-calc-v1";
+const STALE_MS = 10 * 60 * 1000;
+
+function cloneMiners(list) { return list.map(m => Object.assign({}, m)); }
+
+let state = {
+  miners: cloneMiners(EXAMPLE_MINERS),
+  vals: Object.assign({}, DEFAULTS),
+  liveBtc: true, liveSats: true,
+  net: null, fetchError: null,
+  tab: "farm", customized: false, installDismissed: false
+};
+let fetching = false;
+let deferredInstall = null;
+
+const $ = id => document.getElementById(id);
+const inputs = Array.from(document.querySelectorAll("[data-k]"));
+
+function cleanMiners(list) {
+  if (!Array.isArray(list)) return null;
+  return list.filter(m => m && typeof m === "object").map((m, i) => ({
+    id: String(m.id || ("m" + Date.now() + i)),
+    name: typeof m.name === "string" ? m.name.slice(0, 60) : "",
+    th: Number(m.th) || 0, wth: Number(m.wth) || 0, paid: Number(m.paid) || 0
+  }));
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if (s && typeof s === "object") {
+      const miners = cleanMiners(s.miners);
+      state = Object.assign(state, s);
+      state.vals = Object.assign({}, DEFAULTS, s.vals || {});
+      state.miners = miners || cloneMiners(EXAMPLE_MINERS);
+    }
+  } catch (e) { /* storage unavailable: start from the example farm */ }
+  state.fetchError = null;
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable */ }
+}
+function fillFields() {
+  inputs.forEach(el => { el.value = state.vals[el.dataset.k]; });
+  $("liveBtc").checked = !!state.liveBtc;
+  $("liveSats").checked = !!state.liveSats;
+}
+function readFields() {
+  inputs.forEach(el => {
+    const n = parseFloat(el.value);
+    state.vals[el.dataset.k] = Number.isFinite(n) ? n : 0;
+  });
+}
+
+// Formatting
+function usd(n, opts) {
+  if (!Number.isFinite(n)) return "–";
+  const a = Math.abs(n);
+  const d = opts && opts.whole ? 0 : (opts && opts.cents ? 2 : (a < 1 ? 3 : 2));
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function sats(btc) {
+  if (!Number.isFinite(btc)) return "–";
+  return Math.round(btc * 1e8).toLocaleString("en-US") + " sats";
+}
+function pct(n, d = 1) { return (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toLocaleString("en-US") + "%"; }
+function numFmt(n, d = 0) { return Number.isFinite(n) ? n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 }) : "–"; }
+function duration(days) {
+  if (!Number.isFinite(days)) return "Never";
+  if (days < 60) return Math.round(days) + " days";
+  if (days < 730) return Math.round(days / 30.44) + " months";
+  return (days / 365).toFixed(1) + " years";
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function clock(ts) {
+  const d = new Date(ts), now = new Date();
+  const t = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return d.toDateString() === now.toDateString() ? t : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + t;
+}
+function minerName(m, i) { return (m.name || "").trim() || ("Miner " + (i + 1)); }
+function status(net, margin) {
+  if (net < 0) return ["neg", "Losing money"];
+  if (margin < 0.15) return ["warn", "Thin margin"];
+  return ["pos", "Profitable"];
+}
+
+// Live data from mempool.space
+async function fetchJSON(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms || 9000);
+  try {
+    const res = await fetch(url, { signal: ctl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+async function refreshLive() {
+  if (fetching) return;
+  fetching = true;
+  state.fetchError = null;
+  renderStatus();
+  try {
+    const base = "https://mempool.space/api/v1/";
+    const [prices, stats, hr] = await Promise.all([
+      fetchJSON(base + "prices"),
+      fetchJSON(base + "mining/reward-stats/144"),
+      fetchJSON(base + "mining/hashrate/3d")
+    ]);
+    const price = Number(prices.USD);
+    const blocks = Number(stats.endBlock) - Number(stats.startBlock) + 1;
+    const avgReward = Number(stats.totalReward) / (blocks > 0 ? blocks : 144);
+    const perTH = satsPerTHFromNetwork(avgReward, Number(hr.currentDifficulty));
+    if (!(price > 0) || !(perTH > 0)) throw new Error("Unexpected data");
+    state.net = { price: Math.round(price), sats: Math.round(perTH * 10) / 10, at: Date.now() };
+    if (state.liveBtc) state.vals.btc = state.net.price;
+    if (state.liveSats) state.vals.sats = state.net.sats;
+    fillFields();
+  } catch (e) {
+    state.fetchError = navigator.onLine === false ? "offline" : "failed";
+  } finally {
+    fetching = false;
+    saveState();
+    render();
+  }
+}
+function maybeRefresh() {
+  if (!(state.liveBtc || state.liveSats)) return;
+  if (!state.net || Date.now() - state.net.at > STALE_MS) refreshLive();
+}
+function renderStatus() {
+  const btn = $("refreshBtn");
+  btn.disabled = fetching;
+  btn.textContent = fetching ? "Updating…" : "Refresh";
+  let dot = "", text;
+  if (fetching) text = "Getting the latest BTC numbers…";
+  else if (state.fetchError === "offline") { dot = "err"; text = "You're offline. Using your saved numbers."; }
+  else if (state.fetchError) { dot = "err"; text = "Couldn't reach mempool.space. Using your saved numbers."; }
+  else if (state.net) {
+    dot = (state.liveBtc || state.liveSats) ? "live" : "";
+    text = "BTC " + usd(state.net.price, { whole: true }) + " · " + state.net.sats + " sats/TH · " + clock(state.net.at);
+  } else text = "Tap Refresh for today's BTC numbers.";
+  $("dataStatus").innerHTML = "<i class=\"dot " + dot + "\"></i>" + esc(text);
+}
+
+// Tabs
+function showTab(name, fromLoad) {
+  if (!TABS[name]) name = "farm";
+  state.tab = name;
+  Object.keys(TABS).forEach(k => {
+    $("tab-" + k).hidden = k !== name;
+    $("t-" + k).setAttribute("aria-selected", String(k === name));
+  });
+  $("tabTitle").textContent = TABS[name];
+  try { history.replaceState(null, "", "#" + name); } catch (e) { /* ignore */ }
+  if (!fromLoad) window.scrollTo(0, 0);
+  if (name === "outlook") drawChart(calcFarm(state.miners, state.vals));
+  saveState();
+}
+
+// Install hint
+function setupInstall() {
+  const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const banner = $("installBanner");
+  if (standalone || state.installDismissed) { banner.hidden = true; return; }
+  const share = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3v12M8 7l4-4 4 4\"/><path d=\"M6 11H5v9h14v-9h-1\"/></svg>";
+  if (ios) {
+    $("installText").innerHTML = "<strong>Put this on your Home Screen:</strong> tap Share " + share + " in Safari, then <strong>Add to Home Screen</strong>.";
+    banner.hidden = false;
+  } else if (deferredInstall) {
+    $("installText").innerHTML = "<strong>Install Farm Calc</strong> to open it from your home screen. <button type=\"button\" class=\"linkbtn\" id=\"installNow\">Install</button>";
+    banner.hidden = false;
+    $("installNow").addEventListener("click", async () => {
+      deferredInstall.prompt();
+      try { await deferredInstall.userChoice; } catch (e) { /* ignore */ }
+      deferredInstall = null;
+      banner.hidden = true;
+    });
+  } else banner.hidden = true;
+}
+
+// Miner editor
+function renderMinerList() {
+  const box = $("mlist");
+  if (!state.miners.length) {
+    box.innerHTML = "<p class=\"hint\" style=\"margin:0\">No miners yet. Add your first one below.</p>";
+    return;
+  }
+  box.innerHTML = state.miners.map((m, i) => {
+    const id = esc(m.id);
+    return "<div class=\"mcard\" data-card=\"" + id + "\">" +
+      "<div class=\"mcard-top\"><span class=\"ctl\"><input class=\"text\" type=\"text\" id=\"n-" + id + "\" data-mid=\"" + id + "\" data-f=\"name\" placeholder=\"Miner " + (i + 1) + "\" maxlength=\"60\" value=\"" + esc(m.name) + "\" aria-label=\"Miner name\"></span>" +
+      "<button type=\"button\" class=\"remove\" data-remove=\"" + id + "\">Remove</button></div>" +
+      "<div class=\"three\">" +
+      "<label class=\"field\" for=\"th-" + id + "\"><span class=\"lbl\">Power</span><span class=\"ctl\"><input id=\"th-" + id + "\" data-mid=\"" + id + "\" data-f=\"th\" type=\"number\" inputmode=\"decimal\" step=\"any\" min=\"0\" value=\"" + (m.th || "") + "\"><span class=\"unit\">TH</span></span></label>" +
+      "<label class=\"field\" for=\"w-" + id + "\"><span class=\"lbl\">Efficiency</span><span class=\"ctl\"><input id=\"w-" + id + "\" data-mid=\"" + id + "\" data-f=\"wth\" type=\"number\" inputmode=\"decimal\" step=\"any\" min=\"0\" value=\"" + (m.wth || "") + "\"><span class=\"unit\">W/TH</span></span></label>" +
+      "<label class=\"field\" for=\"p-" + id + "\"><span class=\"lbl\">Paid</span><span class=\"ctl\"><span class=\"pre\">$</span><input id=\"p-" + id + "\" data-mid=\"" + id + "\" data-f=\"paid\" type=\"number\" inputmode=\"decimal\" step=\"any\" min=\"0\" value=\"" + (m.paid || "") + "\"></span></label>" +
+      "</div><div class=\"mcard-sum\" id=\"sum-" + id + "\"></div></div>";
+  }).join("");
+}
+function renderMinerSums(r) {
+  const byId = {};
+  r.miners.forEach(x => { byId[x.m.id] = x; });
+  state.miners.forEach(m => {
+    const el = $("sum-" + m.id);
+    if (!el) return;
+    const x = byId[m.id];
+    if (!x) { el.innerHTML = "<span>Enter its power to include it in the farm.</span>"; return; }
+    el.innerHTML = "<span>Net <b>" + esc(usd(x.net)) + "</b>/day</span><span>Payback <b>" + esc(m.paid > 0 ? duration(x.payback) : "–") + "</b></span>";
+  });
+}
+
+// Main render (everything except the miner editor list)
+function render() {
+  const v = state.vals;
+  const r = calcFarm(state.miners, v);
+
+  // Discount inputs
+  $("o-dService").textContent = pct(v.dService);
+  $("o-dVip").textContent = pct(v.dVip);
+  $("discTotal").textContent = pct(r.discPct);
+  $("tokPct").textContent = pct(r.dTok, 0);
+  $("tokDays").textContent = v.tokens > 0
+    ? (Number.isFinite(r.daysCovered) ? "Covers " + numFmt(r.daysCovered) + " days of fees" : "Covers all fees") + " → token discount"
+    : "Token discount";
+
+  // Alert + example
+  const alert = $("alert");
+  if (r.th <= 0 || v.btc <= 0 || v.sats <= 0) {
+    alert.hidden = false;
+    alert.textContent = r.th <= 0
+      ? "Add at least one miner with its power on the Miners tab to see results."
+      : "Enter the BTC price and pool reward per TH on the Miners tab to see results.";
+  } else alert.hidden = true;
+  $("exampleBanner").hidden = !!state.customized;
+
+  // Status + readout
+  const [cls, label] = status(r.netUSD, r.margin);
+  $("chip").className = "chip " + cls; $("chip").textContent = label;
+  $("miniSt").className = "mini-st " + cls; $("miniSt").textContent = label;
+  $("miniVal").className = "mini-val" + (r.netUSD < 0 ? " neg" : "");
+  $("miniVal").innerHTML = esc(usd(r.netUSD)) + "<small>/day</small>";
+  const big = $("bigNet");
+  big.className = "big" + (r.netUSD < 0 ? " neg" : "");
+  big.innerHTML = esc(usd(r.netUSD)) + "<small>/day</small>";
+  $("roNote").textContent = r.grossUSD > 0
+    ? "About " + sats(r.netBTC) + " a day. Your farm keeps " + pct(r.margin * 100, 0) + " of its pool reward after fees."
+    : "";
+  $("sMonth").textContent = usd(r.netUSD * 30.44);
+  $("sYear").textContent = usd(r.netUSD * 365);
+  $("sPayback").textContent = r.paid > 0 ? duration(r.paybackDays) : "–";
+  $("sBreak").textContent = Number.isFinite(r.breakeven) ? usd(r.breakeven, { whole: true }) : "–";
+
+  // Glance
+  $("gTH").textContent = numFmt(r.th, 2) + " TH";
+  $("gW").textContent = r.th > 0 ? numFmt(r.wAvg, 1) + " W/TH" : "–";
+  $("gN").textContent = String(r.count);
+  $("gPaid").textContent = usd(r.paid, { whole: true });
+  const lvl = farmLevel(r.th);
+  $("lvlName").textContent = lvl.name || "None yet";
+  $("lvlNext").textContent = lvl.next ? numFmt(lvl.next[0] - r.th, 2) + " TH to " + lvl.next[1] : "Top level";
+  $("lvlBar").style.width = (lvl.progress * 100).toFixed(1) + "%";
+
+  // By miner
+  const maxAbs = Math.max(0.000001, ...r.miners.map(x => Math.abs(x.net)));
+  const sorted = r.miners.slice().sort((a, b) => b.net - a.net);
+  $("byMiner").innerHTML = sorted.length ? sorted.map(x => {
+    const i = state.miners.indexOf(x.m);
+    const [c, l] = status(x.net, x.margin);
+    return "<div class=\"mrow\"><div class=\"mrow-top\"><span class=\"mrow-name\">" + esc(minerName(x.m, i)) +
+      "<small>" + esc(numFmt(x.m.th, 2)) + " TH · " + esc(numFmt(x.m.wth, 1)) + " W/TH</small></span>" +
+      "<span class=\"mrow-val\"><span class=\"num" + (x.net < 0 ? " minus" : "") + "\">" + esc(usd(x.net)) + "/day</span>" +
+      "<span class=\"chip sm " + c + "\">" + esc(l) + "</span></span></div>" +
+      "<div class=\"mbar\" aria-hidden=\"true\"><i class=\"" + (x.net < 0 ? "neg" : "") + "\" style=\"width:" + (Math.abs(x.net) / maxAbs * 100).toFixed(1) + "%\"></i></div></div>";
+  }).join("") : "<p class=\"hint\" style=\"margin:0\">No miners with power yet.</p>";
+
+  const insight = $("insight");
+  if (sorted.length >= 2) {
+    const losers = sorted.filter(x => x.net < 0);
+    const byTH = r.miners.slice().sort((a, b) => b.net / b.m.th - a.net / a.m.th);
+    const best = byTH[0], worst = byTH[byTH.length - 1];
+    const nameOf = x => minerName(x.m, state.miners.indexOf(x.m));
+    if (losers.length) {
+      const l = losers[losers.length - 1];
+      insight.textContent = nameOf(l) + " costs " + usd(-l.net) + " a day more than it earns. An efficiency upgrade or selling it would lift the whole farm.";
+    } else {
+      const perTHw = worst.net / worst.m.th, perTHb = best.net / best.m.th;
+      insight.textContent = perTHb > perTHw * 1.15
+        ? nameOf(best) + " earns " + usd(perTHb) + " per TH a day, versus " + usd(perTHw) + " for " + nameOf(worst) + ". The difference is efficiency: lower W/TH means lower electricity fees."
+        : "All your miners earn about the same per TH.";
+    }
+    insight.hidden = false;
+  } else insight.hidden = true;
+
+  // Breakdown
+  const toSats = u => v.btc > 0 ? u / v.btc : NaN;
+  const rows = [
+    ["Pool reward (" + numFmt(r.th, 2) + " TH)", r.grossUSD, ""],
+    ["Electricity (avg " + numFmt(r.wAvg, 1) + " W/TH)", -r.elec, "minus"],
+    ["Service", -r.service, "minus"],
+    ["Discounts (" + pct(r.discPct) + ")", r.discUSD, "plus"]
+  ];
+  let html = rows.map(([k, u, c]) => {
+    const plus = u > 0 && c === "plus" ? "+" : "";
+    return "<tr><td>" + esc(k) + "</td><td class=\"num " + c + "\">" + plus + esc(usd(u)) +
+      "</td><td class=\"num " + c + "\">" + plus + esc(sats(toSats(u)).replace(" sats", "")) + "</td></tr>";
+  }).join("");
+  const nc = r.netUSD < 0 ? " minus" : "";
+  html += "<tr class=\"total\"><td>Net reward</td><td class=\"num" + nc + "\">" + esc(usd(r.netUSD)) +
+    "</td><td class=\"num" + nc + "\">" + esc(sats(r.netBTC).replace(" sats", "")) + "</td></tr>";
+  $("breakdown").innerHTML = html;
+
+  renderMinerSums(r);
+
+  // Levers
+  let tokenHow;
+  if (!(v.tokenPrice > 0)) {
+    tokenHow = "Enter the GOMINING price to see how many tokens each tier needs.";
+  } else if (r.dTok >= 20) {
+    tokenHow = "You're at the full 20%. Keep at least <strong>" + esc(numFmt(r.tokens20)) + " GOMINING</strong> (about " + esc(usd(r.tokens20 * v.tokenPrice, { whole: true })) + ") to stay there. The discount drops 1% about every 18 days you don't top up.";
+  } else {
+    const moreNext = Math.max(0, r.tokensNext - v.tokens), more20 = Math.max(0, r.tokens20 - v.tokens);
+    tokenHow = "Hold <strong>" + esc(numFmt(moreNext)) + " more GOMINING</strong> (about " + esc(usd(moreNext * v.tokenPrice, { whole: moreNext * v.tokenPrice >= 10 })) + ") to reach " + r.nextTier + "%, or <strong>" +
+      esc(numFmt(more20)) + " more</strong> (about " + esc(usd(more20 * v.tokenPrice, { whole: true })) + ") for 20%. The full 20% saves " + esc(usd(r.yearly(20), { cents: true })) +
+      " a year, about " + esc(pct(r.tokens20 > 0 ? r.yearly(20) / (r.tokens20 * v.tokenPrice) * 100 : 0, 0)) + " of the tokens' value, before any change in the token's price.";
+  }
+  const levers = [
+    { name: "Service button streak", now: v.dService, max: 3, how: "Tap Service in your Mining farm once every UTC day. Ten days in a row gets the full 3%; missing a day resets the streak." },
+    { name: "VIP status", now: v.dVip, max: 6, how: "0.3% at Bronze II up to 6% at Elite, set by your total TH or veGOMINING votes. Adding TH to the farm can move you up a level." },
+    { name: "Pay fees in GOMINING", now: r.dTok, max: 20, how: tokenHow },
+    { name: "Mining mode discount", now: v.dMode, max: null, how: "Applied automatically while you're in Mining mode. The rate depends on weekly veGOMINING votes." }
+  ];
+  $("levers").innerHTML = levers.map(l =>
+    "<div class=\"lever\"><div class=\"lever-top\"><span class=\"lever-name\">" + esc(l.name) + "</span>" +
+    "<span class=\"lever-vals\">Now " + esc(pct(l.now)) + " saves <b>" + esc(usd(r.yearly(l.now), { cents: true })) + "</b>/yr" +
+    (l.max !== null ? " · max " + l.max + "% saves <b>" + esc(usd(r.yearly(l.max), { cents: true })) + "</b>/yr" : "") +
+    "</span></div><p>" + l.how + "</p></div>"
+  ).join("");
+
+  // Upgrades
+  const up = r.miners.slice().sort((a, b) => b.upSave - a.upSave);
+  $("upgrades").innerHTML = up.length ? up.map(x => {
+    const i = state.miners.indexOf(x.m);
+    return "<tr><td>" + esc(minerName(x.m, i)) + "</td><td class=\"num\">" + esc(numFmt(x.m.wth, 1)) + " W/TH</td><td class=\"num\">" +
+      (x.upSave > 0 ? esc(usd(x.upSave, { cents: true })) : "Already there") + "</td></tr>";
+  }).join("") + "<tr class=\"total\"><td>Whole farm</td><td></td><td class=\"num\">" + esc(usd(r.upTotal, { cents: true })) + "</td></tr>"
+    : "<tr><td colspan=\"3\">Add miners to see upgrade value.</td></tr>";
+
+  // Projection
+  const yrs = r.days / 365;
+  const yrsLabel = (Math.round(yrs * 10) / 10) + (yrs === 1 ? " year" : " years");
+  $("projSub").textContent = "Over " + yrsLabel + ", with difficulty " + (v.diff >= 0 ? "rising " : "falling ") + Math.abs(v.diff) + "% a year and BTC " +
+    (v.btcChg === 0 ? "flat" : (v.btcChg > 0 ? "up " : "down ") + Math.abs(v.btcChg) + "% a year") + ".";
+  $("cMinedK").textContent = "Mined in " + yrsLabel;
+  $("cMined").textContent = sats(r.cumBTC);
+  $("cBought").textContent = sats(r.boughtBTC);
+  $("cPay").textContent = r.paid > 0 ? (r.payDay ? duration(r.payDay) : "Not within " + yrsLabel) : "–";
+  $("cResale").textContent = r.resaleNeededUSD > 0 ? usd(r.resaleNeededUSD, { whole: r.resaleNeededUSD >= 10 }) : "$0";
+  let verdict;
+  const resaleNote = v.resale > 0
+    ? " That includes selling the miners for " + v.resale + "% of what you paid (" + sats(r.resaleBTC) + ")."
+    : " This assumes the miners are worth nothing at the end; set a resale value if you plan to sell them.";
+  if (r.gapBTC >= 0) verdict = "Your farm comes out ahead by " + sats(r.gapBTC) + " compared with buying BTC on the days you bought the miners." + resaleNote;
+  else verdict = "Buying BTC with the same " + usd(r.paid, { whole: true }) + " would leave you " + sats(-r.gapBTC) +
+    " ahead. To tie, the miners would need to sell for about " + usd(r.resaleNeededUSD, { whole: r.resaleNeededUSD >= 10 }) + " at the end." + (v.resale > 0 ? resaleNote : "");
+  if (r.lossDay) verdict += " Fees overtake the farm's reward around " + duration(r.lossDay) + " in.";
+  $("verdict").textContent = verdict;
+
+  renderStatus();
+  if (state.tab === "outlook") drawChart(r);
+}
+
+// Chart
+function niceStep(range) {
+  if (range <= 0) return 1;
+  const raw = range / 4;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const f = raw / mag;
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return nf * mag;
+}
+function kSats(s) {
+  const a = Math.abs(s);
+  if (a >= 1e6) return (s / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+  if (a >= 1e3) return Math.round(s / 1e3) + "k";
+  return String(Math.round(s));
+}
+function drawChart(r) {
+  const box = $("chart");
+  const W = Math.max(280, Math.round(box.clientWidth || 320));
+  const H = Math.round(Math.min(260, Math.max(190, W * 0.55)));
+  const padL = 44, padR = 12, padT = 12, padB = 24;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const pts = r.series.map(([d, b]) => [d, b * 1e8]);
+  const bought = r.boughtBTC * 1e8;
+  let yMin = Math.min(0, ...pts.map(p => p[1]));
+  let yMax = Math.max(bought, ...pts.map(p => p[1]), 1);
+  const st = niceStep(yMax - yMin);
+  yMin = Math.floor(yMin / st) * st;
+  yMax = Math.ceil((yMax * 1.04) / st) * st;
+  const x = d => padL + (d / r.days) * iw;
+  const y = s => padT + ih - ((s - yMin) / (yMax - yMin)) * ih;
+  let g = "";
+  for (let s = yMin; s <= yMax + st / 2; s += st) {
+    const yy = y(s).toFixed(1);
+    g += "<line x1=\"" + padL + "\" x2=\"" + (W - padR) + "\" y1=\"" + yy + "\" y2=\"" + yy + "\" stroke=\"var(--line)\" stroke-width=\"1\"" + (Math.abs(s) < 1e-9 ? "" : " stroke-dasharray=\"2 3\"") + "/>";
+    g += "<text x=\"" + (padL - 6) + "\" y=\"" + (+yy + 4) + "\" text-anchor=\"end\">" + kSats(s) + "</text>";
+  }
+  const yrs = r.days / 365;
+  const tickEvery = yrs >= 1.5 ? 365 : 91.25;
+  for (let d = tickEvery; d <= r.days + 1; d += tickEvery) {
+    const xx = x(Math.min(d, r.days)).toFixed(1);
+    const label = tickEvery === 365 ? Math.round(d / 365) + " yr" : Math.round(d / 30.44) + " mo";
+    g += "<text x=\"" + xx + "\" y=\"" + (H - 6) + "\" text-anchor=\"" + (d >= r.days - 1 ? "end" : "middle") + "\">" + label + "</text>";
+  }
+  g += "<text x=\"" + padL + "\" y=\"" + (H - 6) + "\" text-anchor=\"start\">today</text>";
+  const line = pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join(" ");
+  const area = line + " L" + x(pts[pts.length - 1][0]).toFixed(1) + " " + y(0).toFixed(1) + " L" + x(0).toFixed(1) + " " + y(0).toFixed(1) + " Z";
+  const by = y(bought).toFixed(1);
+  const last = pts[pts.length - 1];
+  box.innerHTML =
+    "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Running total of BTC the farm mines compared with BTC bought instead\">" + g +
+    "<path d=\"" + area + "\" fill=\"var(--accent)\" fill-opacity=\"0.12\" stroke=\"none\"/>" +
+    "<line x1=\"" + padL + "\" x2=\"" + (W - padR) + "\" y1=\"" + by + "\" y2=\"" + by + "\" stroke=\"var(--muted)\" stroke-width=\"2\" stroke-dasharray=\"6 4\"/>" +
+    "<path d=\"" + line + "\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"2.5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>" +
+    "<circle cx=\"" + x(last[0]).toFixed(1) + "\" cy=\"" + y(last[1]).toFixed(1) + "\" r=\"4\" fill=\"var(--accent)\" stroke=\"var(--surface)\" stroke-width=\"2\"/>" +
+    "</svg>";
+}
+
+// Wire up
+loadState();
+fillFields();
+renderMinerList();
+const hashTab = (location.hash || "").replace("#", "");
+showTab(TABS[hashTab] ? hashTab : state.tab, true);
+render();
+setupInstall();
+
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (!el || !el.dataset) return;
+  if (el.dataset.mid) {
+    const m = state.miners.find(x => x.id === el.dataset.mid);
+    if (!m) return;
+    const f = el.dataset.f;
+    if (f === "name") m.name = el.value.slice(0, 60);
+    else { const n = parseFloat(el.value); m[f] = Number.isFinite(n) ? n : 0; }
+    state.customized = true;
+    saveState(); render();
+    return;
+  }
+  if (!el.dataset.k) return;
+  const k = el.dataset.k;
+  if (k === "btc" && state.liveBtc) { state.liveBtc = false; $("liveBtc").checked = false; }
+  if (k === "sats" && state.liveSats) { state.liveSats = false; $("liveSats").checked = false; }
+  readFields(); saveState(); render();
+});
+
+let armed = null, armTimer = null;
+function disarm() {
+  if (armed) {
+    const b = document.querySelector("[data-remove=\"" + CSS.escape(armed) + "\"]");
+    if (b) { b.classList.remove("armed"); b.textContent = "Remove"; }
+  }
+  armed = null; clearTimeout(armTimer);
+}
+$("mlist").addEventListener("click", e => {
+  const b = e.target.closest("[data-remove]");
+  if (!b) return;
+  const id = b.dataset.remove;
+  if (armed !== id) {
+    disarm();
+    armed = id;
+    b.classList.add("armed"); b.textContent = "Tap to confirm";
+    armTimer = setTimeout(disarm, 3000);
+    return;
+  }
+  disarm();
+  state.miners = state.miners.filter(m => m.id !== id);
+  state.customized = true;
+  saveState(); renderMinerList(); render();
+});
+$("addMiner").addEventListener("click", () => {
+  const id = "m" + Date.now().toString(36);
+  state.miners.push({ id, name: "", th: 0, wth: 12, paid: 0 });
+  state.customized = true;
+  saveState(); renderMinerList(); render();
+  const th = $("th-" + id);
+  if (th) { th.focus(); th.scrollIntoView({ block: "center" }); }
+});
+
+let resetArmed = false, resetTimer = null;
+$("reset").addEventListener("click", () => {
+  const b = $("reset");
+  if (!resetArmed) {
+    resetArmed = true; b.classList.add("danger"); b.textContent = "Tap again to replace your miners with the example farm";
+    resetTimer = setTimeout(() => { resetArmed = false; b.classList.remove("danger"); b.textContent = "Reset to the example farm"; }, 4000);
+    return;
+  }
+  clearTimeout(resetTimer); resetArmed = false; b.classList.remove("danger"); b.textContent = "Reset to the example farm";
+  state.miners = cloneMiners(EXAMPLE_MINERS);
+  state.vals = Object.assign({}, DEFAULTS);
+  state.liveBtc = true; state.liveSats = true; state.customized = false;
+  if (state.net) { state.vals.btc = state.net.price; state.vals.sats = state.net.sats; }
+  fillFields(); renderMinerList(); saveState(); render();
+  maybeRefresh();
+});
+
+$("liveBtc").addEventListener("change", e => {
+  state.liveBtc = e.target.checked;
+  if (state.liveBtc && state.net) { state.vals.btc = state.net.price; fillFields(); }
+  saveState(); render();
+  if (state.liveBtc) maybeRefresh();
+});
+$("liveSats").addEventListener("change", e => {
+  state.liveSats = e.target.checked;
+  if (state.liveSats && state.net) { state.vals.sats = state.net.sats; fillFields(); }
+  saveState(); render();
+  if (state.liveSats) maybeRefresh();
+});
+document.querySelectorAll(".sign").forEach(b => b.addEventListener("click", () => {
+  const el = $(b.dataset.for);
+  const n = parseFloat(el.value) || 0;
+  el.value = String(-n);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}));
+document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+document.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.goto)));
+$("refreshBtn").addEventListener("click", () => refreshLive());
+$("installClose").addEventListener("click", () => {
+  state.installDismissed = true; saveState();
+  $("installBanner").hidden = true;
+});
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; setupInstall(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) maybeRefresh(); });
+window.addEventListener("online", () => maybeRefresh());
+let resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (state.tab === "outlook") drawChart(calcFarm(state.miners, state.vals)); }, 120);
+});
+
+maybeRefresh();
+
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => { /* app still works online */ });
+  });
+}
+</script>
+</body>
+</html>

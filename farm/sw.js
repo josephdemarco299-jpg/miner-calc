@@ -1,8 +1,8 @@
-// Miner Calc service worker: opens instantly and works offline.
-// Bump VERSION whenever you change any app file so phones pick up the update.
-const VERSION = "miner-calc-v2";
-const PREFIX = "miner-calc-v";
-const FONTS = "miner-calc-fonts";
+// Farm Calc service worker: opens instantly and works offline.
+// Bump VERSION whenever you change any file in farm/ so phones pick up the update.
+const VERSION = "farm-calc-v1";
+const PREFIX = "farm-calc-v";
+const FONTS = "farm-calc-fonts";
 const SHELL = [
   "./",
   "./index.html",
@@ -22,7 +22,6 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      // Only clear this app's old caches; Farm Calc keeps its own.
       .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== VERSION).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );

@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "GoMining Farm Calculator",
+  "short_name": "Farm Calc",
+  "description": "Net rewards, discounts, per-miner results and outlook for a whole GoMining mining farm.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1411",
+  "theme_color": "#18211B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
