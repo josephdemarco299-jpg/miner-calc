@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "GoMining Profit Calculator",
+  "short_name": "Miner Calc",
+  "description": "Daily net reward, discounts, upgrade payback and miner-vs-BTC outlook for a GoMining digital miner.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1411",
+  "theme_color": "#18211B",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
